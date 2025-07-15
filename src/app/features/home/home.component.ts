@@ -16,6 +16,10 @@ import { WeatherService } from '../../core/weather.service';
 })
 export class HomeComponent {
   city: string = '';
+  kabupaten: string = '';
+
+  fullLocation: string = this.city + ', ' + this.kabupaten;
+
   weatherData: any = null;
   forecastData: any[] = [];
   coordinates: [number, number] | null = null;

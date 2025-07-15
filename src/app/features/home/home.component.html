@@ -4,7 +4,9 @@
     <h1>🌤️ Weather App</h1>
 
     <form class="search-form" (submit)="searchWeather(); $event.preventDefault()">
-      <input [(ngModel)]="city" name="city" placeholder="Enter city" required />
+      <input [(ngModel)]="city" name="city" placeholder="Nama Kota" />
+<!-- <input [(ngModel)]="kabupaten" name="kabupaten" placeholder="Nama Kabupaten (opsional)" /> -->
+
       <button type="submit">Search</button>
     </form>
 
