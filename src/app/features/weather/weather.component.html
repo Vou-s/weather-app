@@ -1,0 +1,32 @@
+<div class="weather-container" *ngIf="hasData" @fadeIn>
+  <div class="weather-grid">
+    <!-- Kiri: Info Cuaca -->
+    <div class="left">
+      <div class="current-weather">
+        <h2>{{ data.name }}</h2>
+        <img src="http://openweathermap.org/img/wn/{{ data.weather[0].icon }}@4x.png" alt="icon cuaca" />
+        <h1>{{ data.main.temp }}°C</h1>
+        <p>{{ data.weather[0].description | titlecase }}</p>
+        <div class="details">
+          <span>💧 {{ data.main.humidity }}%</span>
+          <span>🌬️ {{ data.wind.speed }} m/s</span>
+        </div>
+      </div>
+
+      <div class="forecast-title">Prakiraan 5 Hari:</div>
+      <div class="forecast-list">
+        <div class="forecast-item" *ngFor="let f of forecast">
+          <p>{{ f.dt_txt | date:'EEE, dd MMM' }}</p>
+          <img src="http://openweathermap.org/img/wn/{{ f.weather[0].icon }}@2x.png" />
+          <p>{{ f.main.temp }}°C</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kanan: Peta -->
+    <div class="right" *ngIf="coordinates">
+      <app-map *ngIf="coordinates" [coordinates]="coordinates" [temperature]="data.main.temp"></app-map>
+
+    </div>
+  </div>
+</div>
