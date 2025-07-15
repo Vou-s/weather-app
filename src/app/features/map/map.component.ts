@@ -25,6 +25,9 @@ import { Style, Circle as CircleStyle, Fill, Stroke } from 'ol/style';
 export class MapComponent implements AfterViewInit, OnChanges {
   @Input() coordinates: [number, number] | null = null;
 
+  private vectorLayer!: VectorLayer<VectorSource>;
+  private vectorSource = new VectorSource; // hanya sekali buat
+
   private map!: Map;
   private markerLayer = new VectorLayer({ source: new VectorSource() });
   @Input() temperature: number | null = null;
@@ -32,29 +35,12 @@ export class MapComponent implements AfterViewInit, OnChanges {
 
   ngAfterViewInit(): void {
     const lonLat = this.coordinates || [110.3671, -7.7956];
-    const pointFeature = new Feature({
-      geometry: new Point(fromLonLat(lonLat))
-    });
 
-    // ✅ Pindahkan deklarasi color ke atas
-    const temp = this.temperature ?? 25;
-    const color = this.getColorByTemp(temp);
+    // ✅ Satu vectorSource untuk seluruh sesi
+    this.vectorSource = new VectorSource();
 
-    // ✅ Baru digunakan setelah dideklarasikan
-    pointFeature.setStyle(
-      new Style({
-        image: new CircleStyle({
-          radius: 12,
-          fill: new Fill({ color }),
-          stroke: new Stroke({ color: '#fff', width: 2 })
-        })
-      })
-    );
-
-    const vectorLayer = new VectorLayer({
-      source: new VectorSource({
-        features: [pointFeature]
-      })
+    this.vectorLayer = new VectorLayer({
+      source: this.vectorSource,
     });
 
     this.map = new Map({
@@ -63,40 +49,63 @@ export class MapComponent implements AfterViewInit, OnChanges {
         new TileLayer({
           source: new XYZ({
             url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          })
+          }),
         }),
-        vectorLayer
+        this.vectorLayer, // ✅ Layer langsung dimasukkan sekali
       ],
       view: new View({
         center: fromLonLat(lonLat),
-        zoom: 12
+        zoom: 12,
       }),
-      controls: defaultControls({ zoom: true, rotate: false })
+      controls: defaultControls(),
     });
-  }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['coordinates'] && this.coordinates && this.map) {
-      this.addMarker();
+    if (this.coordinates) {
+      this.addOrUpdateMarker();
     }
   }
 
-  private addMarker() {
-    const [lon, lat] = this.coordinates!;
-    const point = new Point(fromLonLat([lon, lat]));
-    const marker = new Feature(point);
-
-    marker.setStyle(new Style({
-      image: new Icon({
-        src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-        scale: 0.05
-      })
-    }));
-
-    const vectorSource = new VectorSource({ features: [marker] });
-    this.markerLayer.setSource(vectorSource);
-    this.map.getView().animate({ center: fromLonLat([lon, lat]), zoom: 10 });
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['coordinates'] && this.map) {
+      this.addOrUpdateMarker();
+    }
   }
+
+
+addOrUpdateMarker() {
+  if (!this.coordinates || !this.map) return;
+
+  const lonLat = this.coordinates;
+  const temp = this.temperature ?? 25;
+  const color = this.getColorByTemp(temp);
+
+  // ✅ Bersihkan semua fitur (hapus marker lama)
+  this.vectorSource.clear();
+
+  // ✅ Buat marker baru
+  const marker = new Feature({
+    geometry: new Point(fromLonLat(lonLat)),
+  });
+
+  marker.setStyle(
+    new Style({
+      image: new CircleStyle({
+        radius: 12,
+        fill: new Fill({ color }),
+        stroke: new Stroke({ color: '#fff', width: 2 }),
+      }),
+    })
+  );
+
+  // ✅ Tambahkan marker ke vectorSource
+  this.vectorSource.addFeature(marker);
+
+  // Geser map ke lokasi
+  this.map.getView().setCenter(fromLonLat(lonLat));
+}
+
+
+
 
   getColorByTemp(temp: number): string {
     if (temp < 10) return '#00f'; // biru
